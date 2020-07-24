@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[5],{164:function(t,n,e){},172:function(t,n,e){"use strict";var i=e(164);e.n(i).a},191:function(t,n,e){"use strict";e.r(n);var i={metaInfo:{title:"Pose Estimator Comparison"}},o=(e(172),e(19)),s=Object(o.a)(i,(function(){var t=this.$createElement;return(this._self._c||t)("div")}),[],!1,null,null,null);n.default=s.exports}}]);
