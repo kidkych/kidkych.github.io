@@ -1,0 +1,580 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Intro to Object Detection - Chirag Karia</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+		<link rel="stylesheet" href="dist/theme/moon.css" id="theme">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h3 style="text-align: left">Introduction to Object Detection</h3>
+					<img class="r-stretch" src="https://bitmovin.com/wp-content/uploads/2019/08/Object_detection_Blog_Image_Q3_19.jpg">
+					<div style="overflow: hidden">
+						<h6 style="float: left">OT EngSoc Artificial Intelligence Workshop 01</h6>
+						<h6 style="float: right">August 23, 2020</h6>
+					</div>
+					<div>
+						<h6 style="float: left">By: Chirag Karia</h6>
+						<h6 style="float: right" >
+							<a target="_blank" href="https://bitmovin.com/object-detection/">
+								Image Source
+							</a>
+						</h6>
+					</div>
+				</section>
+
+				<section>
+					<h3 data-id="whoami" class="fade-up">Who Am I?</h3>
+					<div style="text-align: left" class="fade-up">
+						<ul>
+							<li>UOIT SOFE Graduate (April 2019)</li>
+							<li>Pursuing an MSc in CS</li>
+							<li>Researching 3D perception with computer vision</li>
+							<li>Worked at two ML based finance startups</li>
+						</ul>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3 data-id="objdet-motivation">Why Care About Object Detection?</h3>
+				</section>
+				<section data-auto-animate>
+					<div>
+<!--						<div style="margin-left: -8em" data-id="objdet-motivation">Why Care About Object Detection?</div>-->
+						<h3 data-id="objdet-motivation">Why Care About Object Detection?</h3>
+						<div style="text-align: left; font-size: 75%; margin-top: 0.5em">
+							<ul>
+								<li>Simplest way to facilitate scene understanding</li>
+								<li>Good introduction to more complex DL models</li>
+								<li>First step in many vision pipelines</li>
+								<li class="fragment fade-down" data-id="yolo">Any software company will hire you if you beat SOTA</li>
+							</ul>
+						</div>
+					</div>
+
+					<div class="container r-stretch fragment" style="margin-top: 0.5em">
+						<div class="columns is-mobile is-vcentered">
+							<div class="column is-half">
+								<figure>
+									<img class="image" style="margin: auto"
+											 src="https://pi.tedcdn.com/r/pe.tedcdn.com/images/ted/90590e549b02c6c9d9492f21b549d8edff3cd374_254x191.jpg?">
+								</figure>
+								<div style="font-size: 75%; margin-top: 0.5em">
+									Joseph Redmon
+									<ul style="font-size: 50%;">
+										<li>PhD student at University of Washington</li>
+										<li>Created the YOLO algorithm</li>
+										<li>Has worked with research groups at IBM, Google, and Facebook</li>
+									</ul>
+								</div>
+							</div>
+							<div class="column is-half fragment" style="font-size: 50%">
+								<figure>
+									<img class="image" style="height: 18em; width: auto; margin: auto"
+											 src="https://img.huffingtonpost.com/asset/5d02306124000051178d34f4.jpeg?ops=scalefit_630_noupscale">
+									<figcaption style="margin-top:0.5em">This is his resume.</figcaption>
+								</figure>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section style="text-align: left">
+					<h3>Overview</h3>
+					<div style="font-size: 75%">
+						<ol>
+							<li>Summary of Neural Networks</li>
+							<ul>
+								<li>2.1 - What is a Neuron?</li>
+								<li>2.2 - Feed Forward Neural Networks</li>
+								<li>2.3 - Convolutional Neural Networks</li>
+							</ul>
+							<li>Types of Object Detectors</li>
+							<li>Intersection over Union</li>
+							<li>Anchor Boxes</li>
+							<li>Non-Maximum Suppression</li>
+							<li>Mean Average Precision</li>
+							<li>Faster R-CNN Pipeline</li>
+							<li>Demo</li>
+						</ol>
+					</div>
+				</section>
+
+				<section>
+					<h3>Summary of Neural Networks</h3>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<div style="text-align: left">
+						<div>ML algorithm:</div>
+						<ul>
+							<li>Maps a vector of inputs $\vec{x}$ to a single output $\hat y$</li>
+							<li>Classification tasks (discrete output)</li>
+							<li>Regression tasks (continuous output)</li>
+							<li>Inspired by biological neurons</li>
+						</ul>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">Biological vs. Artificial Neuron (Perceptron)</h6>
+					<div class="container r-stretch" style="margin-top: 0.5em; font-size: 0.5em">
+						<div class="columns is-mobile is-vcentered">
+							<div class="column is-half">
+								<figure>
+									<img class="image" style="margin: auto"
+											 src="https://upload.wikimedia.org/wikipedia/commons/1/10/Blausen_0657_MultipolarNeuron.png">
+								</figure>
+							</div>
+							<div class="column is-half">
+								<figure data-id="perceptron" >
+									<img class="image" style="margin: auto"
+											 src="https://miro.medium.com/max/3000/1*WRG_Re8vGVuHDYigtq2IBA.jpeg">
+								</figure>
+							</div>
+						</div>
+						<div class="columns is-mobile is-vcentered">
+							<div class="column is-half">
+								<a target="_blank" href="https://en.wikipedia.org/wiki/Neuron">Image Source</a>
+							</div>
+							<div class="column is-half">
+								<a target="_blank" href="https://medium.com/@jayeshbahire/the-artificial-neural-networks-handbook-part-4-d2087d1f583e">
+									Image Source
+								</a>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">The Perceptron</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered">
+							<div class="column is-half" style="font-size: 50%">
+								<figure data-id="perceptron">
+									<img class="image" style="margin: auto"
+											 src="https://miro.medium.com/max/3000/1*WRG_Re8vGVuHDYigtq2IBA.jpeg">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="https://medium.com/@jayeshbahire/the-artificial-neural-networks-handbook-part-4-d2087d1f583e">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+
+							<div class="column is-half" style="font-size: 55%">
+								$$
+								\hat y = \varphi \left( \left(\sum_{n=1}^{m} x_n w_n \right) + b \right)
+								$$
+								<p style="text-align: left">
+									if we create row vectors of inputs and weights:
+								</p>
+
+								$$\begin{aligned}
+								\vec x &= [x_1, x_2, ... , x_m, 1] \\
+								\vec w &= [w_1, w_2, ... , w_m, b]
+								\end{aligned}$$
+
+								<p style="text-align: left">
+									then:
+								</p>
+
+								$$\hat y = \varphi (\vec{x} \cdot \vec{w})$$
+							</div>
+						</div>
+						<p class="fragment fade-down" style="font-size: 65%">
+							A neuron is simply a dot product of inputs $\vec x$ and weights $\vec w$ passed through an
+							activation function $\varphi$
+						</p>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">Activation Functions</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half">
+								<figure>
+									<img class="image" style="margin: auto"
+											 src="https://res.cloudinary.com/dyd911kmh/image/upload/f_auto,q_auto:best/v1547672259/4_jouacz.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="https://www.datacamp.com/community/tutorials/neural-network-models-r">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+
+							<div class="column is-half" style="font-size: 80%">
+								<ul style="text-align: left">
+									<li>Without an activation function, a neuron is simply performing linear regression.</li>
+									<li style="margin-top: 0.5em">
+										Activation functions are also referred to as non-linearities; they serve to help neurons model
+										non-linear domains
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">Activation Functions</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half">
+								<figure>
+									<img class="image" style="margin: auto"
+											 src="https://res.cloudinary.com/dyd911kmh/image/upload/f_auto,q_auto:best/v1547672259/4_jouacz.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="https://www.datacamp.com/community/tutorials/neural-network-models-r">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+
+							<div class="column is-half" style="font-size: 80%">
+								<ul style="text-align: left">
+									<li>Without an activation function, a neuron is simply performing linear regression.</li>
+									<li style="margin-top: 0.5em">
+										Activation functions are also referred to as non-linearities; they serve to help neurons model
+										non-linear domains
+									</li>
+								</ul>
+
+								<div>
+									<div style="text-align: left; margin-top:1em; padding-left:1em" class="r-frame">
+										<p><u>Bounds of activation functions</u></p>
+										<p>Hyper Tangent Function: $ -1 < x < +1$</p>
+										<p>ReLu Function: $ 0 \leq x < + \infty$</p>
+										<p>Sigmoid Function: $ 0 < x < +1$</p>
+										<p>*Identity Function: $ - \infty < x < + \infty$</p>
+									</div>
+
+									<p>*Using an Identity Function is equivalent to not having an activation function at all</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">How do we train a Neuron?</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half">
+								<ul style="text-align: left">
+									<li>Take a neuron with a $m$ inputs $x$ and a single output $\hat y$</li>
+									<li style="margin-top: 0.5em">Across our dataset we want to minimize the difference between the predicted value $\hat y$ and
+										the actual value $y$.
+									</li>
+									<li style="margin-top: 0.5em">Imagine a function $J(\vec w)$ that takes the current set of weights
+										$\vec w$ and calculates the error across a subset of our dataset. The lower this value, the better
+										our weights are.
+									</li>
+									<li style="margin-top: 0.5em">Follow the gradient to the bottom.</li>
+								</ul>
+							</div>
+
+							<div class="column is-half" style="font-size: 80%">
+								<figure data-id="convex">
+									<img class="image" style="margin: auto"
+											 src="https://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization_files/ball.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="http://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization/">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">How do we train a Neuron?</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half" style="text-align: left">
+								let our loss function ($J$) be Mean Squared Error:
+
+								$$
+								J(\vec w) = \frac{1}{N} \sum_{n=1}^{N} (\hat y_n - y_n)^2
+								$$
+
+								<div data-id="partials">
+									where $N$ is the size of the subset of data. The partial derivatives of $J(\vec w)$ with respect
+									to $w_i$ is:
+
+									$$
+									\frac{\partial{J(\vec{w})}}{\partial{w_i}} = \frac{2}{N} \sum_{n=1}^{N} x_{(n, i)}(\hat y_n - y_n)
+									$$
+								</div>
+
+							</div>
+							<div class="column is-half" style="font-size: 50%">
+								<figure class="r-frame" data-id="perceptron" style="padding: 1em">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://miro.medium.com/max/3000/1*WRG_Re8vGVuHDYigtq2IBA.jpeg">
+									<figcaption style="margin-top: 0.25em;">
+										<a target="_blank" href="https://medium.com/@jayeshbahire/the-artificial-neural-networks-handbook-part-4-d2087d1f583e">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+
+								<figure data-id="convex" style="margin-top: 2em !important; padding: 1em" class="r-frame">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization_files/ball.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="http://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization/">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">How do we train a Neuron?</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half" style="text-align: left; font-size: 80%">
+								<div data-id="partials">
+									where $N$ is the size of the subset of data. The partial derivatives of $J(\vec w)$ with respect
+									to $w_i$ is:
+
+									$$
+									\frac{\partial{J(\vec{w})}}{\partial{w_i}} = \frac{2}{N} \sum_{n=1}^{N} x_{(n, i)}(\hat y_n - y_n)
+									$$
+								</div>
+								<div data-id="gradient">
+									the gradient of $J(\vec w)$ with respect to $\vec w$ is:
+
+									$$
+									\nabla_{\vec{w}}J(\vec w) = \begin{bmatrix}
+									\frac{\partial{J(\vec{w})}}{\partial{w_1}} \\
+									... \\
+									\frac{\partial{J(\vec{w})}}{\partial{w_m}}
+									\end{bmatrix} = \frac{2}{N} \boldsymbol{X}^T \cdot (\boldsymbol{X} \cdot \vec{w}^T - \boldsymbol{Y})
+									$$
+
+									where:
+									<div class="columns is-mobile">
+										<div class="column is-half has-text-centered">
+											$$ \boldsymbol{X} \in \mathbb{R}^{(N \times m)} $$
+										</div>
+
+										<div class="column is-half has-text-centered">
+											$$ \vec{w}^T \in \mathbb{R}^{m \times 1}$$
+										</div>
+									</div>
+
+									<div class="columns is-mobile">
+										<div class="column is-half has-text-centered">
+											$$ \boldsymbol{Y} \in \mathbb{R}^{N \times 1} $$
+										</div>
+
+										<div class="column is-half has-text-centered">
+											$$ \nabla_{\vec{w}}J(\vec w) \in \mathbb{R}^{m \times 1} $$
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="column is-half" style="font-size: 50%">
+								<figure class="r-frame" data-id="perceptron" style="padding: 1em">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://miro.medium.com/max/3000/1*WRG_Re8vGVuHDYigtq2IBA.jpeg">
+									<figcaption style="margin-top: 0.25em;">
+										<a target="_blank" href="https://medium.com/@jayeshbahire/the-artificial-neural-networks-handbook-part-4-d2087d1f583e">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+
+								<figure style="margin-top: 2em !important; padding: 1em" class="r-frame">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization_files/ball.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="http://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization/">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>What is a Neuron?</h3>
+					<h6 style="text-align: left">How do we train a Neuron?</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half" style="text-align: left; font-size: 80%">
+								<div data-id="gradient">
+									the gradient of $J(\vec w)$ with respect to $\vec w$ is:
+
+									$$
+									\nabla_{\vec{w}}J(\vec w) = \begin{bmatrix}
+									\frac{\partial{J(\vec{w})}}{\partial{w_1}} \\
+									... \\
+									\frac{\partial{J(\vec{w})}}{\partial{w_m}}
+									\end{bmatrix} = \frac{2}{N} \boldsymbol{X}^T \cdot (\boldsymbol{X} \cdot \vec{w}^T - \boldsymbol{Y})
+									$$
+
+									where:
+									<div class="columns is-mobile">
+										<div class="column is-half has-text-centered">
+											$$ \boldsymbol{X} \in \mathbb{R}^{(N \times m)} $$
+										</div>
+
+										<div class="column is-half has-text-centered">
+											$$ \vec{w}^T \in \mathbb{R}^{m \times 1}$$
+										</div>
+									</div>
+
+									<div class="columns is-mobile">
+										<div class="column is-half has-text-centered">
+											$$ \boldsymbol{Y} \in \mathbb{R}^{N \times 1} $$
+										</div>
+
+										<div class="column is-half has-text-centered">
+											$$ \nabla_{\vec{w}}J(\vec w) \in \mathbb{R}^{m \times 1} $$
+										</div>
+									</div>
+								</div>
+
+								We simply update our weights for the next iteration by:
+
+								$$
+								\vec{w}_{next} = \vec{w}^T - \eta\nabla_{\vec{w}}J(\vec w)
+								$$
+
+								where $\eta$ is a small constant.
+
+							</div>
+							<div class="column is-half" style="font-size: 50%">
+								<figure class="r-frame" data-id="perceptron" style="padding: 1em">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://miro.medium.com/max/3000/1*WRG_Re8vGVuHDYigtq2IBA.jpeg">
+									<figcaption style="margin-top: 0.25em;">
+										<a target="_blank" href="https://medium.com/@jayeshbahire/the-artificial-neural-networks-handbook-part-4-d2087d1f583e">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+
+								<figure style="margin-top: 2em !important; padding: 1em" class="r-frame">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization_files/ball.png">
+									<figcaption style="margin-top: 0.5em">
+										<a target="_blank" href="http://rasbt.github.io/mlxtend/user_guide/general_concepts/gradient-optimization/">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>Feed Forward Neural Networks</h3>
+				</section>
+
+				<section data-auto-animate>
+					<h3>Feed Forward Neural Networks</h3>
+					<h6 style="text-align: left">A Single Neuron is not Enough.</h6>
+					<div class="container r-stretch">
+						<div class="columns is-mobile is-vcentered" style="font-size: 55%">
+							<div class="column is-half" style="font-size: 50%">
+								<figure class="r-frame" data-id="perceptron" style="padding: 1em">
+									<img class="image" style="margin: auto; width: 80%"
+											 src="https://www.researchgate.net/profile/Sandra_Vieira5/publication/312205163/figure/fig1/AS:453658144972800@1485171938968/a-The-building-block-of-deep-neural-networks-artificial-neuron-or-node-Each-input-x.png">
+									<figcaption style="margin-top: 0.25em;">
+										<a target="_blank" href="https://www.researchgate.net/publication/312205163_Using_deep_learning_to_investigate_the_neuroimaging_correlates_of_psychiatric_and_neurological_disorders_Methods_and_applications">
+											Image Source
+										</a>
+									</figcaption>
+								</figure>
+							</div>
+
+							<div class="column is-half" style="text-align: left; font-size: 90%">
+								<ul>
+									<li>It can only provide a single output value.</li>
+									<li style="margin-top: 0.5em">It solely looks at the different weighted combinations of inputs. Does not
+										create new representations.
+									</li>
+									<li style="margin-top: 0.5em">
+										Feed forward neural networks, or fully connected networks consist of multiple layers of multiple
+										neurons.
+									</li>
+									<li style="margin-top: 0.5em">
+										Each layer acts as the input for the subsequent layer. Each layer can be considered a representation
+										of the prior layer.
+									</li>
+
+									<li style="margin-top: 0.5em">
+										Gradients are calculated after the output of the last layer. They are then propagated back through
+										the network (<a href="https://brilliant.org/wiki/backpropagation/">Back-Propagation</a>) to update
+										parameters/weights.
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script src="plugin/math/math.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				mouseWheel: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath ],
+
+				dependencies: [
+					{src: 'plugin/reveald3.js'}
+				]
+			});
+		</script>
+	</body>
+</html>
